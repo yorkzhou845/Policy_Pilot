@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+
+    <script>
+            (function () {
+                var baseEl = document.getElementsByTagName('base')[0];
+                // If we are deployed on devx or prod under /policyagent/
+                if (window.location.pathname.includes('/policyagent/')) {
+                    baseEl.setAttribute('href', '/policyagent/');
+                } else {
+                    // Default fallback for localhost
+                    baseEl.setAttribute('href', '/');
+                }
+            })();
+    </script>
+
+    <!-- TTUHSC PAWS Template 1.1 resources -->
+    <link rel="stylesheet" href="https://scd.ttuhsc.edu/templates/hsc/1.1/css/main.css" />
+    <link rel="stylesheet" href="https://scd.ttuhsc.edu/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
+
+    <!-- Existing Policy Pilot styles -->
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="Policy Pilot P2.styles.css" />
+
+    <HeadOutlet @rendermode="@renderMode" />
+</head>
+
+<body>
+    <Routes @rendermode="@renderMode" />
+
+    <!-- TTUHSC PAWS Template 1.1 scripts -->
+    <script src="https://scd.ttuhsc.edu/libs/jquery/3.6.0/dist/jquery.min.js"></script>
+    <script src="https://scd.ttuhsc.edu/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://scd.ttuhsc.edu/templates/hsc/1.1/js/main.js"></script>
+
+    <!-- Existing Policy Pilot / Blazor scripts -->
+    <script src="/userRuntimeContext.js"></script>
+    <script src="app.js" type="module"></script>
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+
+@code {
+    private readonly IComponentRenderMode renderMode = new InteractiveServerRenderMode(prerender: false);
+}

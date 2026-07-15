@@ -1,0 +1,146 @@
+@page "/"
+@inject LocalPolicyBackendClient Backend
+
+<PageTitle>Policy Pilot Local</PageTitle>
+
+<section class="hero">
+    <div>
+        <p class="eyebrow">Local retrieval-augmented generation</p>
+        <h1>Ask questions about your documents</h1>
+        <p class="hero__description">
+            Answers are generated from locally indexed files using Ollama and a CSV vector store.
+            Treat the cited documents as the authoritative source.
+        </p>
+    </div>
+    <button class="secondary-button" type="button" @onclick="Reset" disabled="@isLoading">
+        New conversation
+    </button>
+</section>
+
+<section class="chat-panel" aria-live="polite">
+    @if (messages.Count == 0)
+    {
+        <div class="empty-state">
+            <h2>Example questions</h2>
+            <button type="button" @onclick="UseApprovalSuggestion">
+                Who can approve an equipment request above $500?
+            </button>
+            <button type="button" @onclick="UseRetentionSuggestion">
+                How long should approved requests be retained?
+            </button>
+            <button type="button" @onclick="UseExceptionSuggestion">
+                What is the emergency-purchase exception?
+            </button>
+        </div>
+    }
+
+    @foreach (var message in messages)
+    {
+        <article class="@($"message message--{message.Role.ToLowerInvariant()}")">
+            <div class="message__role">@message.Role</div>
+            <div class="message__text">@message.Text</div>
+
+            @if (message.Citations.Count > 0)
+            {
+                <div class="citations">
+                    <h3>Retrieved sources</h3>
+                    @foreach (var citation in message.Citations)
+                    {
+                        <div class="citation">
+                            <div class="citation__header">
+                                <strong>@citation.SourceFile</strong>
+                                <span>similarity @citation.Score.ToString("0.000")</span>
+                            </div>
+                            <p>@citation.Quote</p>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+    }
+
+    @if (isLoading)
+    {
+        <article class="message message--assistant">
+            <div class="message__role">Assistant</div>
+            <div class="message__text">Searching the local CSV index and generating an answer…</div>
+        </article>
+    }
+</section>
+
+<section class="composer">
+    <label for="question">Question</label>
+    <textarea id="question"
+              rows="4"
+              maxlength="4000"
+              placeholder="Ask about the indexed documents…"
+              @bind="question"
+              @bind:event="oninput"
+              disabled="@isLoading"></textarea>
+    <div class="composer__footer">
+        <span>@question.Length / 4000</span>
+        <button class="primary-button"
+                type="button"
+                @onclick="SendAsync"
+                disabled="@(isLoading || string.IsNullOrWhiteSpace(question))">
+            @(isLoading ? "Working…" : "Ask")
+        </button>
+    </div>
+</section>
+
+@code {
+    private readonly List<ChatEntry> messages = [];
+    private string question = string.Empty;
+    private bool isLoading;
+
+    private void UseApprovalSuggestion() =>
+        question = "Who can approve an equipment request above $500?";
+
+    private void UseRetentionSuggestion() =>
+        question = "How long should approved requests be retained?";
+
+    private void UseExceptionSuggestion() =>
+        question = "What is the emergency-purchase exception?";
+
+    private void Reset()
+    {
+        messages.Clear();
+        question = string.Empty;
+    }
+
+    private async Task SendAsync()
+    {
+        var submitted = question.Trim();
+        if (submitted.Length == 0 || isLoading)
+        {
+            return;
+        }
+
+        messages.Add(new ChatEntry("You", submitted, []));
+        question = string.Empty;
+        isLoading = true;
+
+        try
+        {
+            var response = await Backend.AskAsync(submitted);
+            messages.Add(new ChatEntry("Assistant", response.Answer, response.Citations));
+        }
+        catch (Exception ex)
+        {
+            messages.Add(
+                new ChatEntry(
+                    "Assistant",
+                    $"The local backend could not complete the request: {ex.Message}",
+                    []));
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private sealed record ChatEntry(
+        string Role,
+        string Text,
+        IReadOnlyList<SourceCitation> Citations);
+}

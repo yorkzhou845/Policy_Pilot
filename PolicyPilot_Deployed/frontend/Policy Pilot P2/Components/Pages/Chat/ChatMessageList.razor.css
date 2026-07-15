@@ -1,0 +1,41 @@
+﻿.message-list-container {
+    margin: 2rem 1.5rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: calc(100vh - 18rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    overflow-anchor: none;
+    box-sizing: border-box;
+    padding-bottom: 2rem;
+}
+
+.message-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    overflow-anchor: none;
+}
+
+.message-scroll-anchor {
+    scroll-margin-top: 0;
+    overflow-anchor: none;
+}
+
+.no-messages {
+    text-align: center;
+    font-size: 1.25rem;
+    color: #999;
+    margin-top: calc(40vh - 18rem);
+}
+
+.generation-space {
+    min-height: 100vh;
+    flex-shrink: 0;
+}
+
+.chat-bottom-space {
+    min-height: 100vh;
+    flex-shrink: 0;
+}

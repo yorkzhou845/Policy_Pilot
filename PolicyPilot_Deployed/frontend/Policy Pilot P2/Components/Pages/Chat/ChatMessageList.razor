@@ -1,0 +1,110 @@
+@inject IJSRuntime JS
+
+<div id="chatScrollRegion" class="message-list-container">
+    <div id="chatMessages" class="page-width message-list">
+        @foreach (var message in Messages)
+        {
+            <div class="message-scroll-anchor" data-chat-role="@GetRoleName(message)" @key="@message">
+                <ChatMessageItem Message="@message" />
+            </div>
+        }
+
+        @if (InProgressMessage is not null)
+        {
+            <div class="message-scroll-anchor" data-chat-role="assistant">
+                <ChatMessageItem Message="@InProgressMessage" InProgress="true" />
+            </div>
+
+            <LoadingSpinner />
+
+            <div class="generation-space" aria-hidden="true"></div>
+        }
+        else if (IsEmpty)
+        {
+            <div class="no-messages">@NoMessagesContent</div>
+        }
+
+        @if (!IsEmpty)
+        {
+            <div class="chat-bottom-space" aria-hidden="true"></div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public required IEnumerable<ChatMessage> Messages { get; set; }
+
+    [Parameter]
+    public ChatMessage? InProgressMessage { get; set; }
+
+    [Parameter]
+    public RenderFragment? NoMessagesContent { get; set; }
+
+    private IJSObjectReference? _chatScrollModule;
+    private int _lastUserMessageCount;
+    private bool _wasGenerating;
+
+    private bool IsEmpty => !Messages.Any(m =>
+        (m.Role == ChatRole.User || m.Role == ChatRole.Assistant)
+        && !string.IsNullOrEmpty(m.Text));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    try
+    {
+        if (firstRender)
+        {
+            _chatScrollModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import",
+                "./Components/Pages/Chat/ChatMessageList.razor.js?v=20260706a");
+        }
+
+        var currentUserMessageCount = Messages.Count(m => m.Role == ChatRole.User);
+        var isGenerating = InProgressMessage is not null;
+
+        var shouldPinLatestUserMessage =
+            _chatScrollModule is not null
+            && currentUserMessageCount > 0
+            && (
+                currentUserMessageCount > _lastUserMessageCount
+                || isGenerating
+                || _wasGenerating
+            );
+
+        if (shouldPinLatestUserMessage)
+        {
+            await _chatScrollModule!.InvokeVoidAsync(
+                "scrollLatestUserMessageToTop",
+                "chatScrollRegion");
+        }
+
+        _lastUserMessageCount = currentUserMessageCount;
+        _wasGenerating = isGenerating;
+    }
+    catch (JSDisconnectedException)
+    {
+    }
+    catch (JSException)
+    {
+    }
+    catch (InvalidOperationException)
+    {
+    }
+}
+
+    private static string GetRoleName(ChatMessage message)
+    {
+        if (message.Role == ChatRole.User)
+        {
+            return "user";
+        }
+
+        if (message.Role == ChatRole.Assistant)
+        {
+            return "assistant";
+        }
+
+        return "other";
+    }
+}

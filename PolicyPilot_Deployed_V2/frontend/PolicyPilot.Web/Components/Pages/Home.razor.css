@@ -1,0 +1,215 @@
+.hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.eyebrow {
+    margin: 0 0 0.4rem;
+    color: #3157a4;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+h1 {
+    margin: 0;
+    color: #172033;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    line-height: 1.05;
+}
+
+.hero__description {
+    max-width: 760px;
+    color: #526074;
+    line-height: 1.65;
+}
+
+.chat-panel,
+.composer {
+    border: 1px solid #d8dee8;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 12px 32px rgba(25, 38, 62, 0.06);
+}
+
+.chat-panel {
+    min-height: 360px;
+    overflow: hidden;
+}
+
+.empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: #526074;
+}
+
+.empty-state h2 {
+    color: #172033;
+    font-size: 1rem;
+}
+
+.empty-state button {
+    display: block;
+    width: min(620px, 100%);
+    margin: 0.7rem auto;
+    padding: 0.85rem 1rem;
+    border: 1px solid #d8dee8;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #26344d;
+    cursor: pointer;
+    text-align: left;
+}
+
+.empty-state button:hover {
+    border-color: #8aa4d7;
+    background: #f1f5fb;
+}
+
+.message {
+    padding: 1.35rem 1.5rem;
+    border-bottom: 1px solid #edf0f5;
+}
+
+.message:last-child {
+    border-bottom: 0;
+}
+
+.message--you {
+    background: #f7f9fc;
+}
+
+.message__role {
+    margin-bottom: 0.45rem;
+    color: #3157a4;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.message__text {
+    color: #1f2a3d;
+    line-height: 1.65;
+    white-space: pre-wrap;
+}
+
+.citations {
+    margin-top: 1.2rem;
+}
+
+.citations h3 {
+    margin: 0 0 0.65rem;
+    color: #526074;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.citation {
+    margin-top: 0.7rem;
+    padding: 0.9rem 1rem;
+    border-left: 3px solid #3157a4;
+    border-radius: 0 8px 8px 0;
+    background: #f7f9fc;
+}
+
+.citation__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: #25334c;
+    font-size: 0.82rem;
+}
+
+.citation__header span {
+    color: #718096;
+}
+
+.citation p {
+    margin: 0.45rem 0 0;
+    color: #526074;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.composer {
+    margin-top: 1rem;
+    padding: 1.1rem;
+}
+
+.composer label {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: #26344d;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.composer textarea {
+    width: 100%;
+    resize: vertical;
+    box-sizing: border-box;
+    border: 1px solid #bdc7d6;
+    border-radius: 10px;
+    padding: 0.9rem;
+    color: #172033;
+    font: inherit;
+    line-height: 1.5;
+}
+
+.composer textarea:focus {
+    outline: 3px solid rgba(49, 87, 164, 0.16);
+    border-color: #3157a4;
+}
+
+.composer__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    color: #718096;
+    font-size: 0.8rem;
+}
+
+.primary-button,
+.secondary-button {
+    border-radius: 9px;
+    padding: 0.7rem 1.05rem;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primary-button {
+    border: 1px solid #3157a4;
+    background: #3157a4;
+    color: #ffffff;
+}
+
+.secondary-button {
+    border: 1px solid #bdc7d6;
+    background: #ffffff;
+    color: #26344d;
+}
+
+button:disabled,
+textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+@media (max-width: 700px) {
+    .hero {
+        flex-direction: column;
+    }
+
+    .citation__header {
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+}

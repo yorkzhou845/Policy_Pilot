@@ -1,0 +1,51 @@
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.vs/
+*.suo
+*.user
+*.csproj.user
+
+# .NET build output
+**/bin/
+**/obj/
+**/publish/
+
+# Python environments and caches
+.venv/
+venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+secrets.json
+appsettings.*.local.json
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Local source documents: commit only the fictional example
+backend/data/documents/*
+!backend/data/documents/example_policy.md
+
+# Generated vector stores and ingestion artifacts
+backend/data/vector_store/*
+!backend/data/vector_store/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Generated exports
+output/
+outputs/

@@ -1,0 +1,7 @@
+Example Equipment Checkout Policy
+
+Employees may borrow shared equipment after receiving approval from the equipment coordinator. Standard checkout periods are seven calendar days. Extensions must be requested before the original due date.
+
+Borrowers are responsible for returning equipment in the condition in which it was issued. Lost or damaged equipment must be reported to the equipment coordinator as soon as practical.
+
+This fictional document exists only for local testing. Replace it with documents you are authorized to use.
