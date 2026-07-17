@@ -1,0 +1,315 @@
+Policy Pilot P2: Local Python Backend to GB10 Remote Backend Transition Notes
+
+Summary
+The project was changed from a Blazor app that depended on a local Python backend to a Blazor app that calls a Python/FastAPI backend running on the GB10 server. The purpose was to move the backend work off the local/web application machine and onto GB10.
+
+Final architecture
+Browser
+  -> Blazor Web App
+  -> GB10 FastAPI backend at http://66.230.43.54:8090
+  -> GB10 local Ollama / retrieval services
+  -> Policy answer returned to Blazor
+
+Previous architecture
+Browser
+  -> Blazor Web App
+  -> Local Python backend launched from inside the Blazor project
+  -> GB10 Ollama / retrieval services
+
+Main result
+The GB10 backend is now running as a service, reachable from Windows, and the Blazor app successfully calls it. The local Python backend dependency was removed from the Blazor runtime path.
+
+Files / areas changed
+
+1. Python backend moved to GB10
+A backend-only package was uploaded to the GB10 server and extracted into:
+
+/home/yorzhou/policy-pilot-backend
+
+The backend folder contains files such as:
+
+backend_server.py
+backend_bridge.py
+main.py
+ollama_client.py
+config.py
+requirements.txt
+chroma_store.py
+chunking.py
+func.py
+manage.py
+
+This backend is now run directly on the GB10 server instead of being started by the Blazor app.
+
+2. Python virtual environment created on GB10
+A Python virtual environment was created on the GB10 server:
+
+cd ~/policy-pilot-backend
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+3. Required GB10 backend environment variables
+The backend requires environment variables for the Ollama host, model names, retrieval API, and backend API key.
+
+The important environment variables are:
+
+GB10_OLLAMA_HOST=http://127.0.0.1:11434
+GB10_OLLAMA_API_KEY=not-required-local
+GB10_GEN_MODEL=llama3.1:8b
+GB10_GUARD_MODEL=llama-guard3:8b
+DB10_RETRIEVE_CONTEXT_URL=http://127.0.0.1:8085/retrieve-context
+POLICY_PILOT_BACKEND_API_KEY=<backend-api-key>
+
+The POLICY_PILOT_BACKEND_API_KEY is a private key used by the Blazor app to authenticate requests to the GB10 FastAPI backend. It is not the GB10 SSH password and not the TTUHSC SSO API secret.
+
+4. GB10 backend tested manually
+The backend was manually started with:
+
+uvicorn backend_server:app --host 0.0.0.0 --port 8090
+
+The health endpoint was tested on GB10:
+
+curl http://127.0.0.1:8090/health
+
+Expected result:
+
+{"status":"ok"}
+
+The answer endpoint was tested on GB10:
+
+curl -X POST http://127.0.0.1:8090/answer \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <backend-api-key>" \
+  -d '{"question":"What is the travel policy?","runtimeContext":{"Location":"Lubbock"}}'
+
+This successfully returned a policy answer with citations.
+
+5. GB10 backend made permanent with systemd
+A systemd service was created at:
+
+/etc/systemd/system/policy-pilot-backend.service
+
+Service structure:
+
+[Unit]
+Description=Policy Pilot GB10 Backend
+After=network.target
+
+[Service]
+User=yorzhou
+WorkingDirectory=/home/yorzhou/policy-pilot-backend
+Environment="GB10_OLLAMA_HOST=http://127.0.0.1:11434"
+Environment="GB10_OLLAMA_API_KEY=not-required-local"
+Environment="GB10_GEN_MODEL=llama3.1:8b"
+Environment="GB10_GUARD_MODEL=llama-guard3:8b"
+Environment="DB10_RETRIEVE_CONTEXT_URL=http://127.0.0.1:8085/retrieve-context"
+Environment="POLICY_PILOT_BACKEND_API_KEY=<backend-api-key>"
+ExecStart=/home/yorzhou/policy-pilot-backend/.venv/bin/uvicorn backend_server:app --host 0.0.0.0 --port 8090
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+The service was enabled and started with:
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now policy-pilot-backend
+sudo systemctl status policy-pilot-backend --no-pager
+
+The backend service now starts automatically and listens on port 8090.
+
+6. Firewall / port access
+The backend listens on:
+
+0.0.0.0:8090
+
+This means it accepts external connections if the firewall allows them.
+
+The firewall was checked with:
+
+sudo ufw status verbose
+
+Port 8090 needed to be allowed:
+
+sudo ufw allow 8090/tcp
+sudo ufw reload
+
+Windows was then able to reach:
+
+http://66.230.43.54:8090/health
+
+7. Windows test of the GB10 backend
+From Windows PowerShell, the health endpoint was tested with:
+
+curl.exe http://66.230.43.54:8090/health
+
+Expected result:
+
+{"status":"ok"}
+
+The answer endpoint was tested using PowerShell-native JSON formatting:
+
+$body = @{
+    question = "What is the travel policy?"
+    runtimeContext = @{
+        Location = "Lubbock"
+    }
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod `
+    -Method Post `
+    -Uri "http://66.230.43.54:8090/answer" `
+    -Headers @{ "X-API-KEY" = "<backend-api-key>" } `
+    -ContentType "application/json" `
+    -Body $body
+
+This successfully returned a policy answer from GB10.
+
+Note: The curl.exe command had quoting problems in PowerShell when trying to send raw JSON directly. Invoke-RestMethod with ConvertTo-Json worked more reliably.
+
+8. Blazor app configured to call GB10 backend
+The Blazor app was updated to call the GB10 backend instead of starting or depending on local Python.
+
+The local launch settings were updated in:
+
+Properties/launchSettings.json
+
+The important environment variables added were:
+
+GB10Backend__BaseUrl=http://66.230.43.54:8090
+GB10Backend__ApiKey=<backend-api-key>
+
+The backend API key here must match the POLICY_PILOT_BACKEND_API_KEY configured on the GB10 systemd service.
+
+The HSC SSO values were also included in launchSettings.json for local testing with manager approval:
+
+HSCWebAuthentication__ApiKey=<hsc-api-key>
+HSCWebAuthentication__ApiSecret=<hsc-api-secret>
+HSCWebAuthentication__AppIdentifier=policyagent
+HSCWebAuthentication__CookieLifetimeHours=8
+HSCWebAuthentication__DefaultUrl=/
+
+Important: Do not put the GB10 SSH password in launchSettings.json.
+
+9. SSO issue found and corrected
+After moving settings into launchSettings.json, TTUHSC SSO started failing locally.
+
+The likely cause was a typo in the HSCWebAuthentication API key value in the http launch profile. There was an accidental comma inside the API key string.
+
+Incorrect pattern:
+
+"HSCWebAuthentication__ApiKey": "<api-key>,"
+
+Correct pattern:
+
+"HSCWebAuthentication__ApiKey": "<api-key>"
+
+After correcting that, SSO was able to proceed again.
+
+10. Blazor runtime error after SSO was fixed
+After SSO worked, the Blazor app reached the UI but crashed with this error:
+
+Cannot provide a value for property 'ChatClient' on type 'Policy_Pilot_P2.Components.Pages.Chat.ChatSuggestions'.
+There is no registered service of type 'Microsoft.Extensions.AI.IChatClient'.
+
+Cause:
+The app no longer registers a local Microsoft.Extensions.AI.IChatClient because the backend moved to GB10. However, the ChatSuggestions component still tried to inject IChatClient.
+
+This was unrelated to SSO and unrelated to GB10 connectivity. It was a leftover local-AI dependency in the UI.
+
+11. ChatSuggestions removed from Chat.razor
+To avoid reintroducing a local AI dependency, ChatSuggestions was removed from:
+
+Components/Pages/Chat/Chat.razor
+
+Removed from the markup:
+
+<ChatSuggestions OnSelected="@AddUserMessageAsync" @ref="@chatSuggestions" />
+
+Removed from the code section:
+
+private ChatSuggestions? chatSuggestions;
+
+Removed calls to:
+
+chatSuggestions?.Clear();
+
+The main chat path was kept:
+
+ChatInput -> AddUserMessageAsync -> Gb10ChromaBackendService -> GB10 backend /answer endpoint
+
+This fixed the missing IChatClient error.
+
+12. Final local build/run commands
+After the changes, the app was rebuilt and run with:
+
+dotnet clean
+dotnet restore
+dotnet build
+dotnet run
+
+The app listened on:
+
+http://localhost:5026
+
+The build succeeded. The SQLite package warning appeared but did not block the app:
+
+Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.10 has a known high severity vulnerability.
+
+This warning should be handled later, but it was not the blocker for the GB10 transition.
+
+13. Final working state
+At the end of the transition:
+
+- GB10 FastAPI backend is running on port 8090.
+- GB10 backend is reachable from Windows.
+- /health endpoint returns {"status":"ok"}.
+- /answer endpoint returns real policy answers and citations.
+- Blazor app builds successfully.
+- Blazor app no longer requires local Python to answer policy questions.
+- Blazor app uses GB10Backend__BaseUrl and GB10Backend__ApiKey to reach the remote backend.
+- SSO worked after fixing the launchSettings typo.
+- The leftover ChatSuggestions dependency on IChatClient was removed.
+
+Security notes
+- The GB10 SSH password should never be placed in appsettings.json, launchSettings.json, Git, or the systemd service.
+- The backend API key should be rotated if it was exposed in screenshots or logs.
+- The same backend API key must be set in both:
+  1. GB10 systemd service as POLICY_PILOT_BACKEND_API_KEY
+  2. Blazor launchSettings.json as GB10Backend__ApiKey
+- HSC SSO secrets should only be stored where the manager/admin approves.
+- For production, it is safer to restrict port 8090 to the web server IP instead of allowing it publicly to Anywhere.
+
+Useful troubleshooting commands
+
+On GB10:
+
+sudo systemctl status policy-pilot-backend --no-pager
+journalctl -u policy-pilot-backend -n 50 --no-pager
+curl http://127.0.0.1:8090/health
+sudo ss -tulpn | grep 8090
+sudo ufw status verbose
+
+On Windows:
+
+curl.exe http://66.230.43.54:8090/health
+Test-NetConnection 66.230.43.54 -Port 8090
+
+PowerShell answer test:
+
+$body = @{
+    question = "What is the travel policy?"
+    runtimeContext = @{
+        Location = "Lubbock"
+    }
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod `
+    -Method Post `
+    -Uri "http://66.230.43.54:8090/answer" `
+    -Headers @{ "X-API-KEY" = "<backend-api-key>" } `
+    -ContentType "application/json" `
+    -Body $body

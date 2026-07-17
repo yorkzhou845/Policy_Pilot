@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5026",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+
+        "GB10Backend__BaseUrl": "http://66.230.43.54:8090",
+        "GB10Backend__ApiKey": "80a5493eb99ee64028f0dc1d6482e716ae2136733128543d44758b7892eb84f5",
+
+        "HSCWebAuthentication__ApiKey": "b6e7c2c1-3b27-4dff-9870-71456aadbf5e",
+        "HSCWebAuthentication__ApiSecret": "2720037b-e08f-49ef-9071-b5afdc941346",
+        "HSCWebAuthentication__AppIdentifier": "policyagent",
+        "HSCWebAuthentication__CookieLifetimeHours": "8",
+        "HSCWebAuthentication__DefaultUrl": "/"
+      }
+    },
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:7261;http://localhost:5026",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+
+        "GB10Backend__BaseUrl": "http://66.230.43.54:8090",
+        "GB10Backend__ApiKey": "80a5493eb99ee64028f0dc1d6482e716ae2136733128543d44758b7892eb84f5",
+
+        "HSCWebAuthentication__ApiKey": "b6e7c2c1-3b27-4dff-9870-71456aadbf5e",
+        "HSCWebAuthentication__ApiSecret": "2720037b-e08f-49ef-9071-b5afdc941346",
+        "HSCWebAuthentication__AppIdentifier": "policyagent",
+        "HSCWebAuthentication__CookieLifetimeHours": "8",
+        "HSCWebAuthentication__DefaultUrl": "/"
+      }
+    }
+  }
+}

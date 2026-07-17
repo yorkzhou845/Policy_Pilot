@@ -1,0 +1,17 @@
+<div class="chat-header-shell">
+    <div class="chat-header-container">
+        <h1>Policy Pilot</h1>
+
+        <div class="chat-header-controls">
+            <button class="btn btn-sm btn-outline-secondary" @onclick="OnNewChat">
+                <span class="new-chat-plus">＋</span>
+                New chat
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnNewChat { get; set; }
+}
